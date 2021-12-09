@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import {v4 as uuid} from 'uuid'
+// import {v4 as uuid} from 'uuid'
 import { useRemoteEvents } from '../../contexts/RemoteEventProvider';
 
 const getTxByStatus = async (status) => {
@@ -133,11 +133,10 @@ export const TxEventHandler = () => {
         if(!resTxs) return console.log('handlePendingApprovalTxs - PENDING_APPROVAL - null')
 
         for (const resTx of resTxs) { 
-            if(resTx.status === "PENDING_APPROVAL" && resTx.type === "FUNDS_ADD" && resTx.created_by === resTx.user_id) {
-                // await createApproved(resTx).catch(error => console.error('handlePendingApprovalTxs - caugh error, ', error));
-                
+            if(resTx.status === "PENDING_APPROVAL" && resTx.type === "FUNDS_ADD" && resTx.created_by === resTx.user_id) {                
                 const res = await createTransactionWrapper(resTx, "SELF_APPROVED", "APPROVED", 500, 1500);
                 console.log ("SELF_APPROVED, ", res)
+
             }
         }
         return resTxs
@@ -166,14 +165,14 @@ export const TxEventHandler = () => {
             } else if (position.current_balance < tx.amount && tx.type === "INVOICE") {
                 const res = await createTransactionWrapper(tx, "PAYMENT", "NON_SUFFICIENT_FUNDS", 1500, 2000);                
                 console.log ("NON_SUFFICIENT_FUNDS, ", res)
-                
+
             } else {
                 console.log("ERROR handleApprovedUsecase - Unknown Usecase")
                 console.log('transaction,', tx )
                 console.log('current_balance,', position )
             }
         }
-        return null
+        return Txs
     };
 
 
@@ -183,6 +182,7 @@ export const TxEventHandler = () => {
 
             const pendingApprovalTxs = await handlePendingApprovalTxs()
             const approvedTxs = await handleApprovedTxs()
+            if (pendingApprovalTxs && approvedTxs)
             console.log("done with handleMessageTriggers")
             return setIsIdle(true)
         };
@@ -190,7 +190,9 @@ export const TxEventHandler = () => {
         if(message && isIdle) {
             setIsIdle(false)
             handleMessageTriggers()
-        }
+        };
+
+        // eslint-disable-next-line
     }, [message]);
 
     return (
